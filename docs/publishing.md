@@ -21,7 +21,10 @@ icon, feature graphic and phone screenshots. NeoStore shows the same data from t
 
 No anti-features are expected: no tracking, no ads, no non-free dependencies or network services.
 
-## IzzyOnDroid (and so NeoStore), faster route
+## IzzyOnDroid (not planned for now)
+
+The current plan is F-Droid only; NeoStore shows F-Droid apps once they are in the main repository.
+The steps below are kept for later.
 
 IzzyOnDroid publishes the APK from GitHub Releases, so it needs a **release-signed** APK:
 

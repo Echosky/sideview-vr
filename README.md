@@ -56,16 +56,16 @@ All screenshots are taken on the Axon 7 in headset (stereo) mode, playing *Big B
 <td align="center" valign="top"><img src="docs/screenshots/04-stadium-seating.jpg" width="400" alt="Stadium seating behind the viewer"><br><b>Stadium seating</b><br>Rows rise behind you</td>
 </tr>
 <tr>
-<td align="center" valign="top"><img src="docs/screenshots/05-vr-menu-play.jpg" width="400" alt="In-headset control panel"><br><b>In-headset menu</b><br>Point with your head, controller or mouse</td>
-<td align="center" valign="top"><img src="docs/screenshots/06-vr-menu-theatre.jpg" width="400" alt="Theatre settings"><br><b>Theatre settings</b><br>Light levels, dim delay, seats, curtains</td>
+<td align="center" valign="top"><img src="docs/screenshots/05-menu-play.jpg" width="400" alt="In-headset control panel"><br><b>Menu</b><br>Same panel in the headset (point to use) and on the phone</td>
+<td align="center" valign="top"><img src="docs/screenshots/06-menu-theatre.jpg" width="400" alt="Theatre settings"><br><b>Theatre settings</b><br>Light levels, dim delay, seats, curtains</td>
 </tr>
 <tr>
-<td align="center" valign="top"><img src="docs/screenshots/07-vr-menu-audio.jpg" width="400" alt="Audio and subtitle settings"><br><b>Smart audio and subtitles</b><br>Pick your language from a list</td>
-<td align="center" valign="top"><img src="docs/screenshots/08-vr-menu-library.jpg" width="400" alt="Library"><br><b>Library</b><br>SMB, DLNA, recents, offline copies</td>
+<td align="center" valign="top"><img src="docs/screenshots/07-menu-audio.jpg" width="400" alt="Audio and subtitle settings"><br><b>Smart audio and subtitles</b><br>Pick your language from a list</td>
+<td align="center" valign="top"><img src="docs/screenshots/08-menu-library.jpg" width="400" alt="Library"><br><b>Library</b><br>SMB, DLNA, recents, offline copies</td>
 </tr>
 <tr>
-<td align="center" valign="top"><img src="docs/screenshots/09-vr-menu-power.jpg" width="400" alt="Battery settings"><br><b>Battery</b><br>Saver, view lock, zero-copy video</td>
-<td align="center" valign="top"><img src="docs/screenshots/10-vr-menu-screen.jpg" width="400" alt="Screen settings"><br><b>Screen</b><br>Size, distance, curve, tilt, seat, smart view</td>
+<td align="center" valign="top"><img src="docs/screenshots/09-menu-power.jpg" width="400" alt="Battery settings"><br><b>Battery</b><br>Saver, view lock, zero-copy video</td>
+<td align="center" valign="top"><img src="docs/screenshots/10-menu-screen.jpg" width="400" alt="Screen settings"><br><b>Screen</b><br>Size, distance, curve, tilt, seat, smart view</td>
 </tr>
 <tr>
 <td align="center" valign="top"><img src="docs/screenshots/11-start-screen.jpg" width="400" alt="Start screen"><br><b>Start screen</b><br>Theatre straight away, or the phone menu</td>
