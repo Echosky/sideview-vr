@@ -1,0 +1,36 @@
+name: Device test report
+description: Tell us how Sideview VR runs on your phone (works or not)
+labels: [device-report]
+body:
+  - type: input
+    id: phone
+    attributes:
+      label: Phone model, chipset and Android version
+    validations:
+      required: true
+  - type: input
+    id: headset
+    attributes:
+      label: Headset and controller
+  - type: dropdown
+    id: result
+    attributes:
+      label: Overall
+      options: [Works well, Works with problems, Does not work]
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: What did you check?
+      options:
+        - label: Video plays (which formats in the notes)
+        - label: Head tracking feels right (no drift, correct directions)
+        - label: Picture looks sharp and straight through the lenses
+        - label: Daydream controller connects and points correctly
+        - label: SMB or DLNA playback
+        - label: Offline copies download and play
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes

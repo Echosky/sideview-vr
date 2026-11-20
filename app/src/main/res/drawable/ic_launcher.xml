@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sideview VR icon: a glowing screen seen at an angle in a dark room. Original artwork. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#15151F"
+        android:pathData="M18,8h72a10,10 0,0 1,10 10v72a10,10 0,0 1,-10 10h-72a10,10 0,0 1,-10 -10v-72a10,10 0,0 1,10 -10z" />
+    <path android:fillColor="#3A2E58" android:pathData="M8,78 L100,70 L100,100 L8,100 Z" />
+    <path android:fillColor="#7FB4FF" android:pathData="M30,32 L86,24 L86,66 L30,60 Z" />
+    <path android:fillColor="#D7E8FF" android:pathData="M34,36 L82,29 L82,62 L34,56 Z" />
+</vector>

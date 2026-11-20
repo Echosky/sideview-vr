@@ -1,0 +1,26 @@
+<p><b>Beta software.</b> Tested on a ZTE Axon 7 (Android 10) with a Daydream View headset. It needs more testing on other phones: reports are welcome.</p>
+
+<p>Sideview VR plays your own videos on a big screen in a virtual cinema, in a phone VR headset (Cardboard or Daydream style). It is built on libmpv, so it plays almost any file.</p>
+
+<p><b>Theatre</b></p>
+<ul>
+<li>Stadium seating with curved rows of red seats, velvet curtains and a large screen</li>
+<li>House lights that dim after the movie starts (choose 0–15 s), room lit by the picture</li>
+<li>Point at the screen and scroll to resize it; point at the lights and scroll to dim them</li>
+<li>Smart view adjust: the screen eases to where your head rests</li>
+<li>2D, 3D side-by-side and top-bottom, 180°, 360°, fisheye</li>
+</ul>
+
+<p><b>Your media</b></p>
+<ul>
+<li>Local files, SMB shares (home NAS, also over a VPN), DLNA servers, URLs</li>
+<li>Offline copies: download a file, a folder or a whole series for a trip</li>
+<li>Smart audio and subtitles for your language: forced subtitles for foreign dialogue, full subtitles for foreign films, switches dual-audio files</li>
+<li>Resume, chapters, Bluetooth audio delay, HDR tone mapping</li>
+</ul>
+
+<p><b>Controls</b>: Daydream controller (Bluetooth), Bluetooth mouse, keyboards and gamepads, or the headset button.</p>
+
+<p><b>Battery</b>: draws frames only when needed, battery saver, view lock, zero-copy decoding.</p>
+
+<p>Free software under GPL-3.0-or-later. libmpv and FFmpeg are used as LGPL libraries. Not affiliated with any other VR video player.</p>

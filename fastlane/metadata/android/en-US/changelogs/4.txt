@@ -1,0 +1,1 @@
+First public beta (0.4.0-beta): virtual cinema with stadium seating, curtains and dimming lights; SMB, DLNA and offline copies; smart audio and subtitles; Daydream controller and mouse; battery saving. Tested on a ZTE Axon 7 only.

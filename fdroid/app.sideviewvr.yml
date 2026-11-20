@@ -1,0 +1,34 @@
+# Draft F-Droid metadata (for fdroiddata/metadata/app.sideviewvr.yml). Not submitted yet.
+Categories:
+  - Multimedia
+License: GPL-3.0-or-later
+AuthorName: Sideview VR contributors
+SourceCode: https://github.com/Echosky/sideview-vr
+IssueTracker: https://github.com/Echosky/sideview-vr/issues
+Changelog: https://github.com/Echosky/sideview-vr/blob/main/CHANGELOG.md
+
+AutoName: Sideview VR
+
+RepoType: git
+Repo: https://github.com/Echosky/sideview-vr.git
+
+Builds:
+  - versionName: 0.4.0-beta
+    versionCode: 4
+    commit: v0.4.0-beta
+    subdir: app
+    sudo:
+      - apt-get update
+      - apt-get install -y autoconf automake libtool pkg-config nasm ninja-build python3-venv gperf
+    gradle:
+      - yes
+    # The native build needs meson >= 1.4; F-Droid's buildserver may need it from a srclib.
+    build:
+      - bash ../tools/build-libmpv.sh $PWD/../build-native
+      - bash ../tools/import-libmpv.sh $PWD/../build-native/mpv-android
+    ndk: r30
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags ^v[0-9.]+(-beta)?$
+CurrentVersion: 0.4.0-beta
+CurrentVersionCode: 4

@@ -1,0 +1,13 @@
+name: Feature request
+description: Suggest an idea
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like, and why?
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: Ideas inspired by other players are welcome; implementations must be our own (see CONTRIBUTING.md).

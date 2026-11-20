@@ -1,0 +1,42 @@
+name: Bug report
+description: Something doesn't work (please include your phone model)
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for testing the beta! Reports from phones other than the Axon 7 are especially useful.
+  - type: input
+    id: phone
+    attributes:
+      label: Phone model and Android version
+      placeholder: e.g. Pixel 7, Android 14
+    validations:
+      required: true
+  - type: input
+    id: headset
+    attributes:
+      label: Headset and controller
+      placeholder: e.g. Daydream View with controller, Cardboard v2, none (Flat mode)
+  - type: input
+    id: version
+    attributes:
+      label: Sideview VR version
+      placeholder: e.g. 0.4.0-beta
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+  - type: textarea
+    id: log
+    attributes:
+      label: Log (optional)
+      description: "`adb logcat -d | grep -E 'Sideview|mpv|AndroidRuntime'`. Remove server names or addresses you don't want to share."
+      render: text
