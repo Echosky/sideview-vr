@@ -17,6 +17,6 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - uses: android-actions/setup-android@v3
+      # The runner image already has the Android SDK (ANDROID_HOME); Gradle installs the NDK if needed.
       - name: Unit tests
         run: ./gradlew --no-daemon testDebugUnitTest
