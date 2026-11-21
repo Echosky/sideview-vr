@@ -15,16 +15,16 @@ Repo: https://github.com/Echosky/sideview-vr.git
 Builds:
   - versionName: 0.4.0-beta
     versionCode: 4
-    commit: 013ae46940d34105a9c057ab53465de995f91cf3
+    commit: cd3d5296f56852cfcc448c7e146b0eefc03dcd4a
     subdir: app
     sudo:
       - apt-get update
       - apt-get install -y autoconf automake libtool pkg-config nasm ninja-build python3-venv
-        gperf
+        gperf wget
     gradle:
       - yes
     build:
-      - bash ../tools/build-libmpv.sh $PWD/../build-native
+      - ANDROID_NDK_HOME=$$NDK$$ bash ../tools/build-libmpv.sh $PWD/../build-native
       - bash ../tools/import-libmpv.sh $PWD/../build-native/mpv-android
     ndk: r30
 
