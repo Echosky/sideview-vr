@@ -53,7 +53,7 @@ android {
 // Native libraries come from tools/build-libmpv.sh + tools/import-libmpv.sh; an APK build fails without
 // them ("clean" and unit tests do not need them).
 gradle.taskGraph.whenReady {
-    if (allTasks.any { it.project == project && (it.name.startsWith("assemble") || it.name.startsWith("bundle") || it.name.startsWith("install")) }) {
+    if (allTasks.any { it.project == project && Regex("(assemble|bundle|install|package)(Debug|Release)?").matches(it.name) }) {
         val missing = listOf("arm64-v8a", "armeabi-v7a").filterNot { file("prebuilt/$it/lib/libmpv.so").exists() }
         if (missing.isNotEmpty()) {
             throw GradleException("Missing app/prebuilt/${missing.joinToString()}/lib/libmpv.so: run tools/build-libmpv.sh and tools/import-libmpv.sh")
