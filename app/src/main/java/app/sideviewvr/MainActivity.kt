@@ -665,7 +665,15 @@ class MainActivity : Activity(), DaydreamController.Listener {
         val perms = if (Build.VERSION.SDK_INT >= 31) arrayOf(Manifest.permission.BLUETOOTH_CONNECT)
         else arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
         if (perms.all { checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }) controller.connect(quiet = true)
+        else if (!btAsked && pairedDaydream()) { btAsked = true; requestPermissions(perms, REQ_BT) }
     }
+    private var btAsked = false
+
+    /** True when a Daydream controller is paired in Android's Bluetooth settings. */
+    private fun pairedDaydream(): Boolean = try {
+        val bm = getSystemService(android.bluetooth.BluetoothManager::class.java)
+        bm?.adapter?.bondedDevices?.any { it.name?.contains("Daydream", true) == true } == true
+    } catch (_: SecurityException) { true }   // can't list without the permission: assume yes, ask once
 
     private val btState = object : android.content.BroadcastReceiver() {
         override fun onReceive(c: android.content.Context, i: Intent) {

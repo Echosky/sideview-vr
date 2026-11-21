@@ -401,7 +401,7 @@ class VrRenderer(
         val cam = seatPosition(ScreenGeometry.of(settings.screenWidth, eyeAspect(), settings.screenDistance, 0f).distance)
         if (controller.connected) {
             controller.pointerDirection(pointerDir)
-            pointerOrigin[0] = 0.18f; pointerOrigin[1] = -0.45f; pointerOrigin[2] = -0.15f
+            pointerOrigin[0] = 0.16f; pointerOrigin[1] = -0.32f; pointerOrigin[2] = -0.3f   // right hand, in view
         } else if (mouseActive) {
             val cp = cos(mousePitch)
             pointerDir[0] = sin(mouseYaw) * cp; pointerDir[1] = sin(mousePitch); pointerDir[2] = -cos(mouseYaw) * cp

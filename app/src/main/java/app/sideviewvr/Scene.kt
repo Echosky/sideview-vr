@@ -396,9 +396,11 @@ class LaserBeam {
         uniform vec4 uColor;
         in float vT; in float vS; out vec4 fragColor;
         void main() {
-            float core = 1.0 - smoothstep(0.0, 1.0, abs(vS));
-            float a = uColor.a * mix(0.85, 0.15, vT) * core;
-            fragColor = vec4(mix(uColor.rgb, vec3(1.0), core * 0.5), a);
+            float d = abs(vS);
+            float core = 1.0 - smoothstep(0.0, 0.35, d);         // bright centre line
+            float halo = 1.0 - smoothstep(0.2, 1.0, d);          // soft glow around it
+            float a = uColor.a * mix(1.0, 0.35, vT) * max(core, halo * 0.45);
+            fragColor = vec4(mix(uColor.rgb, vec3(1.0), core * 0.6), a);
         }
         """
     )
@@ -416,7 +418,10 @@ class LaserBeam {
         val len = kotlin.math.sqrt(sx * sx + sy * sy + sz * sz)
         if (len < 1e-6f) return
         sx /= len; sy /= len; sz /= len
-        val w0 = 0.006f; val w1 = 0.012f    // half widths: thin at the hand, slightly wider far away
+        // Half widths grow with distance from the eye, so the beam keeps about the same apparent width.
+        fun dist(x: Float, y: Float, z: Float) = kotlin.math.sqrt((x - eye[0]) * (x - eye[0]) + (y - eye[1]) * (y - eye[1]) + (z - eye[2]) * (z - eye[2]))
+        val w0 = 0.006f * maxOf(0.5f, dist(from[0], from[1], from[2]))
+        val w1 = 0.006f * maxOf(0.5f, dist(to[0], to[1], to[2]))
         pts[0] = from[0] - sx * w0; pts[1] = from[1] - sy * w0; pts[2] = from[2] - sz * w0
         pts[3] = from[0] + sx * w0; pts[4] = from[1] + sy * w0; pts[5] = from[2] + sz * w0
         pts[6] = to[0] + sx * w1; pts[7] = to[1] + sy * w1; pts[8] = to[2] + sz * w1
