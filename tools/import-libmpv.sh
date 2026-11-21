@@ -1,4 +1,5 @@
 #!/bin/bash -e
+set -eo pipefail  # also when run as "bash script"
 # Copies libmpv/FFmpeg headers and shared libraries from an mpv-android
 # build tree into app/prebuilt/<abi>/ (git-ignored).
 # Usage: tools/import-libmpv.sh <path to mpv-android checkout>

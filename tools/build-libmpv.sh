@@ -1,4 +1,5 @@
 #!/bin/bash -e
+set -eo pipefail  # also when run as "bash script"
 # Builds LGPL libmpv + FFmpeg for arm64-v8a and armeabi-v7a using the
 # mpv-android build scripts (MIT), with all GPL options turned off.
 # Usage: tools/build-libmpv.sh [work dir, default ~/sv]
