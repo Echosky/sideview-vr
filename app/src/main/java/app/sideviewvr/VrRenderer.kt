@@ -418,12 +418,14 @@ class VrRenderer(
         val rx = -fz; val rz = fx                   // body right
         // Shoulder: right of and below the eyes.
         var px = rx * 0.19f; var py = -0.22f; var pz = rz * 0.19f
-        // Elbow hangs below the shoulder, swinging forward/sideways a little with the pointing direction.
+        // The hand rests in front of the elbow; turning the controller mostly pivots at the wrist,
+        // so the hand moves only a little (as a real wrist would), toward where it points.
         val d0 = pointerDir[0]; val d1 = pointerDir[1]; val d2 = pointerDir[2]
-        val lift = (d1 + 0.2f).coerceIn(-0.6f, 1f)  // raising the controller raises the elbow
-        px += d0 * 0.12f; py += -0.26f + lift * 0.14f; pz += d2 * 0.12f
-        // Forearm points along the controller; the beam starts at the controller tip.
-        px += d0 * 0.34f; py += d1 * 0.34f; pz += d2 * 0.34f
+        px += fx * 0.30f; py += -0.24f; pz += fz * 0.30f              // forearm at rest, forward
+        val lift = (d1 + 0.2f).coerceIn(-0.6f, 1f)
+        py += lift * 0.08f                                          // raising the controller lifts the hand
+        px += d0 * 0.08f; pz += d2 * 0.08f                           // small wrist swing
+        px += d0 * 0.06f; py += d1 * 0.06f; pz += d2 * 0.06f         // controller length: beam starts at the tip
         pointerOrigin[0] = px; pointerOrigin[1] = py; pointerOrigin[2] = pz
     }
 
