@@ -188,6 +188,12 @@ class ControlPanel(private val a: MainActivity, private val s: Settings) {
         actions("⏮ Chapter" to { a.player.chapter(-1) }, "Chapter ⏭" to { a.player.chapter(1) },
             "Recenter" to { a.recenter() }, "Hide panel" to { a.hidePanel() })
         stepper("Speed", { "%.2fx".format(s.speed) }, { setSpeed(s.speed - 0.1f) }, { setSpeed(s.speed + 0.1f) })
+        actions("⏭ Skip intro" to { a.skipIntro() })
+        choice("Skip intros", { arrayOf("Off", "Offer (app button)", "Automatically")[s.introMode.coerceIn(0, 2)] }) {
+            s.introMode = (s.introMode + 1) % 3
+        }
+        content.addView(hint("Uses chapters named Intro / Opening / Recap, and learns from intros you skip yourself: " +
+            "after you skip the same intro in two episodes of a season, the rest are skipped for you."))
     }
 
     private fun setSpeed(v: Float) { s.speed = v.coerceIn(0.25f, 4f); a.player.setSpeed(s.speed.toDouble()) }

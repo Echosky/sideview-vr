@@ -421,6 +421,7 @@ class MainActivity : Activity(), DaydreamController.Listener {
         closeStartScreen()   // a video opened from another app skips the start screen
         currentRef = ref
         currentTitle = title
+        introRanges = null; introOffer = null; introDone = null; lastPos = Double.NaN
         subtitleLabel = null
         subsPendingSince = SystemClock.uptimeMillis()
         player.load(url, sources.resumePosition(ref), bluray, settings.subMode)
@@ -658,6 +659,53 @@ class MainActivity : Activity(), DaydreamController.Listener {
         }
     }
 
+    // ------------------------------------------------------------- intros
+
+    private var introRanges: List<IntroSkip.Range>? = null
+    private var introOffer: IntroSkip.Range? = null
+    private var introDone: IntroSkip.Range? = null
+    private var lastPos = Double.NaN
+
+    private fun loadIntroRanges(): List<IntroSkip.Range>? {
+        val n = player.prop("chapter-list/count")?.toIntOrNull() ?: return null
+        val chapters = (0 until n).map {
+            IntroSkip.Chapter(player.prop("chapter-list/$it/title") ?: "", player.prop("chapter-list/$it/time")?.toDoubleOrNull() ?: 0.0)
+        }
+        val found = IntroSkip.fromChapters(chapters, player.duration).toMutableList()
+        if (found.none { it.kind == "intro" }) currentRef?.let { IntroSkip.decode(settings.string(IntroSkip.seasonKey(it))) }?.let { found += it }
+        return found
+    }
+
+    private fun checkIntro(pos: Double) {
+        if (introRanges == null && !player.duration.isNaN()) introRanges = loadIntroRanges()
+        val ranges = introRanges ?: return
+        // Learn: an early forward jump of 20 s to 4 min looks like the viewer skipping the intro.
+        val prev = lastPos
+        lastPos = pos
+        if (!prev.isNaN() && IntroSkip.looksLikeManualSkip(prev, pos) && introDone == null &&
+            ranges.none { it.confident && it.kind == "intro" }) {
+            currentRef?.let { val k = IntroSkip.seasonKey(it); settings.putString(k, IntroSkip.learn(settings.string(k), prev, pos)) }
+            introDone = IntroSkip.Range(prev, pos, "intro", false)
+        }
+        if (settings.introMode == 0) { introOffer = null; return }
+        val r = IntroSkip.active(ranges, pos)
+        if (r == null || r == introDone) { if (introOffer != null) { introOffer = null; panel.setStatus("") }; return }
+        if (settings.introMode == 2 && r.confident) { skipIntro(r); return }
+        if (introOffer != r) {
+            introOffer = r
+            val what = if (r.kind == "recap") "recap" else "intro"
+            panel.setStatus("Press the app button to skip the $what")
+            if (!settings.stereo) toast("Press the app button (or I) to skip the $what")
+        }
+    }
+
+    fun skipIntro(r: IntroSkip.Range? = introOffer ?: introRanges?.let { IntroSkip.active(it, player.position) }) {
+        r ?: return
+        introDone = r; introOffer = null
+        player.seekAbsolute(r.end)
+        panel.setStatus(if (r.kind == "recap") "Skipped the recap" else "Skipped the intro")
+    }
+
     // ------------------------------------------------------------- Daydream controller
 
     /** Reconnects quietly to a remembered or paired controller when Bluetooth is on. */
@@ -709,7 +757,7 @@ class MainActivity : Activity(), DaydreamController.Listener {
         when (button) {
             DaydreamController.Button.CLICK ->
                 if (panelShown && !renderer.hitX.isNaN()) clickPanel(renderer.hitX, renderer.hitY) else player.togglePause()
-            DaydreamController.Button.APP -> if (panelShown) hidePanel() else showPanel()
+            DaydreamController.Button.APP -> if (introOffer != null) skipIntro() else if (panelShown) hidePanel() else showPanel()
             DaydreamController.Button.HOME -> recenter()
             DaydreamController.Button.VOL_UP -> volume(AudioManager.ADJUST_RAISE)
             DaydreamController.Button.VOL_DOWN -> volume(AudioManager.ADJUST_LOWER)
@@ -772,6 +820,10 @@ class MainActivity : Activity(), DaydreamController.Listener {
         if (BuildDebug.on(this) && SystemClock.uptimeMillis() % 3000 < 300) Log.d(TAG, "osd=${player.prop("osd-dimensions/w")}x${player.prop("osd-dimensions/h")} vo=${player.prop("video-out-params/w")}x${player.prop("video-out-params/h")} surf=$surfaceSize")
         val pos = player.position
         if (!pos.isNaN()) panel.updateTime(pos, player.duration, player.mediaTitle)
+        if (!pos.isNaN()) checkIntro(pos)
+        // Curtains open while a video is on, close when it ends or nothing is loaded.
+        val ended = player.prop("eof-reached") == "yes"
+        renderer.curtainTarget = if (renderer.hasVideo && !ended) 1f else 0f
         val now = SystemClock.uptimeMillis()
         if (now - lastResumeSave > 5000) { lastResumeSave = now; saveResume() }
         updateLights(now)
@@ -798,6 +850,7 @@ class MainActivity : Activity(), DaydreamController.Listener {
             KeyEvent.KEYCODE_MINUS, KeyEvent.KEYCODE_BUTTON_L1 -> settings.screenWidth = (settings.screenWidth / 1.1f).coerceAtLeast(1f)
             KeyEvent.KEYCODE_R, KeyEvent.KEYCODE_BUTTON_Y -> recenter()
             KeyEvent.KEYCODE_V -> setStereo(!settings.stereo)
+            KeyEvent.KEYCODE_I -> skipIntro()
             KeyEvent.KEYCODE_M, KeyEvent.KEYCODE_MENU, KeyEvent.KEYCODE_BUTTON_X -> if (panelShown) hidePanel() else showPanel()
             else -> return super.onKeyDown(keyCode, event)
         }

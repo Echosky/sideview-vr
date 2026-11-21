@@ -183,17 +183,19 @@ class Curtains {
         uniform mat4 uVp;
         uniform vec4 uRect;   // x0, x1, y0, y1
         uniform vec2 uZ;      // z, scallop depth
+        uniform float uFolds; // > 0: folds follow the cloth (gather when drawn open)
         layout(location=0) in vec2 aUv;
         out vec3 vPos; out vec3 vNormal; out float vFold;
         const float K = 6.2831853 / 0.34;   // one fold every 34 cm
         void main() {
             float x = mix(uRect.x, uRect.y, aUv.x);
             float y = mix(uRect.z, uRect.w, aUv.y);
-            float ph = x * K;
+            float k = uFolds > 0.0 ? 6.2831853 * uFolds / max(uRect.y - uRect.x, 0.05) : K;
+            float ph = uFolds > 0.0 ? aUv.x * 6.2831853 * uFolds : x * K;
             y += uZ.y * (1.0 - aUv.y) * (1.0 - abs(sin(ph * 0.25)));
             float z = uZ.x + 0.07 * sin(ph);
             vFold = sin(ph);
-            vNormal = normalize(vec3(-0.07 * K * cos(ph), 0.0, 1.0));
+            vNormal = normalize(vec3(-0.07 * k * cos(ph), 0.0, 1.0));
             vPos = vec3(x, y, z);
             gl_Position = uVp * vec4(vPos, 1.0);
         }
@@ -217,6 +219,7 @@ class Curtains {
     private val uRect = glGetUniformLocation(prog, "uRect")
     private val uZ = glGetUniformLocation(prog, "uZ")
     private val uCam = glGetUniformLocation(prog, "uCam")
+    private val uFolds = glGetUniformLocation(prog, "uFolds")
     private val light = LightUniforms(prog)
     private val vao: Int
     private val count: Int
@@ -233,7 +236,8 @@ class Curtains {
         vao = Gl.vao(Gl.floats(*v.toFloatArray()), 2)
     }
 
-    fun draw(vp: FloatArray, cam: FloatArray, geo: ScreenGeometry, glow: Float, lights: Float, glowTex: Int) {
+    /** [open]: 0 = drawn closed across the screen, 1 = pulled back to the sides. */
+    fun draw(vp: FloatArray, cam: FloatArray, geo: ScreenGeometry, glow: Float, lights: Float, glowTex: Int, open: Float = 1f) {
         // Screen edge (the screen may be curved toward the viewer).
         var ex = geo.width / 2; var ez = -geo.distance
         if (geo.curve > 0.001f) {
@@ -248,11 +252,17 @@ class Curtains {
         glUniform3f(uCam, cam[0], cam[1], cam[2])
         light.set(geo, glow, lights, glowTex)
         glBindVertexArray(vao)
+        // Each side curtain keeps its cloth (fold count); its inner edge travels to the middle to close.
+        val o = open * open * (3 - 2 * open)          // ease in and out
+        val inner = 0.04f + (ex - 0.08f - 0.04f) * o
+        val folds = (outer + 0.04f) / 0.34f
+        glUniform1f(uFolds, folds)
         glUniform2f(uZ, ez + 0.15f, 0f)
-        glUniform4f(uRect, -outer, -ex + 0.08f, floor, top + 1.0f)
+        glUniform4f(uRect, -outer, -inner, floor, top + 1.0f)
         glDrawArrays(GL_TRIANGLES, 0, count)
-        glUniform4f(uRect, ex - 0.08f, outer, floor, top + 1.0f)
+        glUniform4f(uRect, inner, outer, floor, top + 1.0f)
         glDrawArrays(GL_TRIANGLES, 0, count)
+        glUniform1f(uFolds, 0f)
         glUniform2f(uZ, ez + 0.3f, 0.18f)
         glUniform4f(uRect, -outer, outer, top - 0.05f, top + 1.0f)
         glDrawArrays(GL_TRIANGLES, 0, count)

@@ -44,6 +44,9 @@ class VrRenderer(
     @Volatile var lightsTarget = 1f
     /** 0 = theatre visible, 1 = black void around the screen. */
     @Volatile var voidTarget = 0f
+    /** Curtains: 1 = open (a video is on), 0 = closed. */
+    @Volatile var curtainTarget = 0f
+    private var curtainNow = 0f
     private var voidNow = 0f
     private var laser: LaserBeam? = null
     private var lightsNow = 1f
@@ -251,6 +254,12 @@ class VrRenderer(
         lastFrameNs = now
         lightsNow += (lightsTarget - lightsNow) * minOf(1f, dt * 1.2f)
         voidNow += (voidTarget - voidNow) * minOf(1f, dt * 0.9f)
+        // Curtains travel at a steady pace (about 3 s end to end).
+        if (curtainNow != curtainTarget) {
+            val step = dt / 3f
+            curtainNow = if (curtainTarget > curtainNow) minOf(curtainTarget, curtainNow + step) else maxOf(curtainTarget, curtainNow - step)
+            requestRender()
+        }
         if (kotlin.math.abs(voidTarget - voidNow) > 0.002f) requestRender() else voidNow = voidTarget
         // Keep drawing while the lights fade or a pointing device moves the pointer.
         if (kotlin.math.abs(lightsTarget - lightsNow) > 0.002f || controller.connected) requestRender()
@@ -336,7 +345,7 @@ class VrRenderer(
                 room!!.draw(vp, geo, glow, light, glowCap!!.tex)
                 val cam = curCam
                 if (settings.seats) seats!!.draw(vp, cam, geo, glow, light, glowCap!!.tex)
-                if (settings.curtains) curtains!!.draw(vp, cam, geo, glow, light, glowCap!!.tex)
+                if (settings.curtains) curtains!!.draw(vp, cam, geo, glow, light, glowCap!!.tex, curtainNow)
             }
             val d = settings.depthOffset
             val shift = if (settings.stereoFormat == StereoFormat.MONO) 0f else if (eye == 0) d else -d
@@ -396,12 +405,33 @@ class VrRenderer(
     private val fadeWake = android.os.Handler(android.os.Looper.getMainLooper())
     @Volatile private var fadeWakePosted = false
 
+    /**
+     * Estimates where the hand holding the controller is from the controller's direction alone
+     * (shoulder -> elbow -> wrist), so the laser starts from a hand that swings, rises and reaches
+     * forward with the controller. Result in [pointerOrigin], relative to the eyes.
+     */
+    private fun armModel() {
+        // Body faces where the head faces (yaw only).
+        val hx = -head[2]; val hz = -head[10]
+        val hl = sqrt(hx * hx + hz * hz).coerceAtLeast(1e-4f)
+        val fx = hx / hl; val fz = hz / hl          // body forward
+        val rx = -fz; val rz = fx                   // body right
+        // Shoulder: right of and below the eyes.
+        var px = rx * 0.19f; var py = -0.22f; var pz = rz * 0.19f
+        // Elbow hangs below the shoulder, swinging forward/sideways a little with the pointing direction.
+        val d0 = pointerDir[0]; val d1 = pointerDir[1]; val d2 = pointerDir[2]
+        val lift = (d1 + 0.2f).coerceIn(-0.6f, 1f)  // raising the controller raises the elbow
+        px += d0 * 0.12f; py += -0.26f + lift * 0.14f; pz += d2 * 0.12f
+        // Forearm points along the controller; the beam starts at the controller tip.
+        px += d0 * 0.34f; py += d1 * 0.34f; pz += d2 * 0.34f
+        pointerOrigin[0] = px; pointerOrigin[1] = py; pointerOrigin[2] = pz
+    }
+
     /** Computes the pointer ray (controller if connected, else gaze) and its hit on the panel. */
     private fun updatePointer() {
         val cam = seatPosition(ScreenGeometry.of(settings.screenWidth, eyeAspect(), settings.screenDistance, 0f).distance)
         if (controller.connected) {
             controller.pointerDirection(pointerDir)
-            pointerOrigin[0] = 0.16f; pointerOrigin[1] = -0.32f; pointerOrigin[2] = -0.3f   // right hand, in view
         } else if (mouseActive) {
             val cp = cos(mousePitch)
             pointerDir[0] = sin(mouseYaw) * cp; pointerDir[1] = sin(mousePitch); pointerDir[2] = -cos(mouseYaw) * cp
@@ -412,6 +442,7 @@ class VrRenderer(
             pointerOrigin.fill(0f)
         }
         if (controller.connected || mouseActive) unadjust(pointerDir)
+        if (controller.connected) armModel()
         pointTarget = classifyPointer(cam)
         updateDotAlpha(panelVisible && panel!!.hasTexture)
         if (!panelVisible || !panel!!.hasTexture) {

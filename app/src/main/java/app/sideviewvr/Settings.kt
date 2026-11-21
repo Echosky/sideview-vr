@@ -57,6 +57,7 @@ class Settings(context: Context) {
     var ambient by F(1f)                 // screen-colored light spill
     var dimLights by F(0.1f)             // light level while a video plays
     var autoDim by B(true)               // fade the lights down when playback starts
+    var introMode by I(2)                // skip intros: 0 off, 1 offer (app button), 2 automatically when sure
     var voidRoom by B(false)             // no theatre at all: the screen floats in a black void
     var voidWhenDimmed by B(true)        // the theatre fades into a black void while the movie plays
     var dimDelaySec by I(3)              // 0..15 s after playback starts
