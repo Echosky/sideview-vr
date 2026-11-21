@@ -15,12 +15,12 @@ Repo: https://github.com/Echosky/sideview-vr.git
 Builds:
   - versionName: 0.4.0-beta
     versionCode: 4
-    commit: cd3d5296f56852cfcc448c7e146b0eefc03dcd4a
+    commit: 06dc81a90a0d3e0bf0d39924ad59d860149a7fa8
     subdir: app
     sudo:
       - apt-get update
       - apt-get install -y autoconf automake libtool pkg-config nasm ninja-build python3-venv
-        gperf wget
+        gperf wget bzip2 xz-utils make build-essential cmake unzip
     gradle:
       - yes
     build:
