@@ -2,9 +2,11 @@
 LOCAL_PATH := $(call my-dir)
 PREBUILT := $(LOCAL_PATH)/../../../prebuilt/$(TARGET_ARCH_ABI)
 
+# Without the prebuilt libraries (e.g. during "gradle clean" before they are built) define no
+# modules; app/build.gradle.kts stops a real build that is missing them.
 ifeq ($(wildcard $(PREBUILT)/lib/libmpv.so),)
-$(error Missing $(PREBUILT)/lib/libmpv.so - run tools/build-libmpv.sh and tools/import-libmpv.sh)
-endif
+$(warning Missing $(PREBUILT)/lib/libmpv.so - run tools/build-libmpv.sh and tools/import-libmpv.sh)
+else
 
 # Prebuilt LGPL libraries (libmpv + FFmpeg), packaged into the APK.
 SV_PREBUILT_LIBS := mpv avcodec avformat avutil avfilter swresample swscale
@@ -28,3 +30,4 @@ LOCAL_CPPFLAGS := -std=c++17 -Wall
 LOCAL_SHARED_LIBRARIES := $(SV_PREBUILT_LIBS)
 LOCAL_LDLIBS := -llog -landroid
 include $(BUILD_SHARED_LIBRARY)
+endif
