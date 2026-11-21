@@ -42,6 +42,10 @@ class VrRenderer(
 
     /** House light level to fade to (the renderer eases toward it). */
     @Volatile var lightsTarget = 1f
+    /** 0 = theatre visible, 1 = black void around the screen. */
+    @Volatile var voidTarget = 0f
+    private var voidNow = 0f
+    private var laser: LaserBeam? = null
     private var lightsNow = 1f
     private var lastFrameNs = 0L
     private var frameDt = 0f
@@ -195,7 +199,7 @@ class VrRenderer(
     }
 
     /** Eye buffer size relative to the display: supersampled for a sharper screen; less with the saver. */
-    private fun targetEyeScale() = if (saver) 1.0f else 1.4f
+    private fun targetEyeScale() = settings.renderScale.coerceIn(0.7f, 1.6f)
 
     private fun makeEyes() {
         eyeScale = targetEyeScale()
@@ -246,6 +250,8 @@ class VrRenderer(
         frameDt = dt
         lastFrameNs = now
         lightsNow += (lightsTarget - lightsNow) * minOf(1f, dt * 1.2f)
+        voidNow += (voidTarget - voidNow) * minOf(1f, dt * 0.9f)
+        if (kotlin.math.abs(voidTarget - voidNow) > 0.002f) requestRender() else voidNow = voidTarget
         // Keep drawing while the lights fade or a pointing device moves the pointer.
         if (kotlin.math.abs(lightsTarget - lightsNow) > 0.002f || controller.connected) requestRender()
         if (lockView) System.arraycopy(lockedHead, 0, head, 0, 16)
@@ -323,11 +329,15 @@ class VrRenderer(
         if (projection == Projection.FLAT || !hasVideo) {
             glEnable(GL_DEPTH_TEST)
             Matrix.multiplyMM(vp, 0, proj, 0, view, 0)
-            val glow = if (hasVideo) settings.ambient else 0f
-            room!!.draw(vp, geo, glow, lightsNow, glowCap!!.tex)
-            val cam = curCam
-            if (settings.seats) seats!!.draw(vp, cam, geo, glow, lightsNow, glowCap!!.tex)
-            if (settings.curtains) curtains!!.draw(vp, cam, geo, glow, lightsNow, glowCap!!.tex)
+            val vis = 1f - voidNow
+            if (vis > 0.004f) {
+                val glow = (if (hasVideo) settings.ambient else 0f) * vis
+                val light = lightsNow * vis
+                room!!.draw(vp, geo, glow, light, glowCap!!.tex)
+                val cam = curCam
+                if (settings.seats) seats!!.draw(vp, cam, geo, glow, light, glowCap!!.tex)
+                if (settings.curtains) curtains!!.draw(vp, cam, geo, glow, light, glowCap!!.tex)
+            }
             val d = settings.depthOffset
             val shift = if (settings.stereoFormat == StereoFormat.MONO) 0f else if (eye == 0) d else -d
             screen!!.draw(vp, tilt, geo, texMatrix, videoTex, rect, shift, hasVideo)
@@ -473,6 +483,7 @@ class VrRenderer(
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         if (showPanel) drawPanelQuad(p, cam)
+        drawLaser(cam)
         drawDot(p, cam)
         glDisable(GL_BLEND)
     }
@@ -484,6 +495,19 @@ class VrRenderer(
         Matrix.scaleM(panelModel, 0, panelWidth, panelHeight(), 1f)
         Matrix.multiplyMM(tmp, 0, vp, 0, panelModel, 0)
         p.drawPanel(tmp)
+    }
+
+    private val laserFrom = FloatArray(3)
+
+    private fun drawLaser(cam: FloatArray) {
+        if (!controller.connected || dotAlpha <= 0f) return
+        val l = laser ?: LaserBeam().also { laser = it }
+        laserFrom[0] = cam[0] + pointerOrigin[0]; laserFrom[1] = cam[1] + pointerOrigin[1]; laserFrom[2] = cam[2] + pointerOrigin[2]
+        when {
+            dotOnPanel -> l.draw(vp, laserFrom, dotPos, cam, 0.45f, 0.75f, 1f, dotAlpha)
+            pointTarget == Target.SCREEN -> l.draw(vp, laserFrom, dotPos, cam, 1f, 0.85f, 0.4f, dotAlpha)
+            else -> l.draw(vp, laserFrom, dotPos, cam, 0.85f, 0.9f, 1f, dotAlpha)
+        }
     }
 
     private fun drawDot(p: PanelQuad, cam: FloatArray) {

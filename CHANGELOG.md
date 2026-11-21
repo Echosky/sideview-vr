@@ -3,6 +3,18 @@
 All notable changes to Sideview VR. Versions follow [semantic versioning](https://semver.org/);
 `-beta` releases are not yet considered stable.
 
+## [Unreleased]
+
+### Added
+- Black void: the theatre fades away while the movie plays (or choose the void permanently)
+- Laser pointer from the Daydream controller to what it points at
+- Sharpness setting (render resolution), independent of battery saver
+- Donation link (Buy Me a Coffee)
+
+### Fixed
+- Daydream controller reconnects automatically; a controller button leaves the start screen
+- The pointer dot fades out when the pointer rests
+
 ## [0.4.0-beta] - 2026-11-20
 
 First public beta. Tested on a ZTE Axon 7 (Android 10) with a Daydream View headset only.

@@ -377,6 +377,7 @@ class MainActivity : Activity(), DaydreamController.Listener {
         if (playing) { if (playingSince == 0L) playingSince = now } else playingSince = 0L
         dimmedNow = settings.autoDim && playing && now - playingSince >= settings.dimDelaySec * 1000L
         renderer.lightsTarget = if (dimmedNow) settings.dimLights else settings.roomLights
+        renderer.voidTarget = if (settings.voidRoom || (settings.voidWhenDimmed && dimmedNow)) 1f else 0f
     }
 
     // ------------------------------------------------------------- subtitles

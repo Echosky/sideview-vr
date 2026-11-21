@@ -57,6 +57,8 @@ class Settings(context: Context) {
     var ambient by F(1f)                 // screen-colored light spill
     var dimLights by F(0.1f)             // light level while a video plays
     var autoDim by B(true)               // fade the lights down when playback starts
+    var voidRoom by B(false)             // no theatre at all: the screen floats in a black void
+    var voidWhenDimmed by B(true)        // the theatre fades into a black void while the movie plays
     var dimDelaySec by I(3)              // 0..15 s after playback starts
     var seats by B(true)                 // red theatre seats
     var curtains by B(true)              // curtains around the screen
@@ -65,7 +67,8 @@ class Settings(context: Context) {
     var subMode by I(1)
 
     // Battery
-    var batterySaver by B(false)         // lower render resolution, 50 Hz sensor, slower status updates
+    var batterySaver by B(false)         // 50 Hz sensor, room glow updated less often, slower status updates
+    var renderScale by F(1.4f)           // eye buffer size relative to the display (sharpness vs. battery)
     var lockView by B(false)
     var smartView by B(true)             // smart view adjust: ease the screen to where the head rests             // freeze the view (no head tracking): the screen stays in front
     var zeroCopy by B(false)             // decode straight to the screen texture when no subtitles are shown

@@ -250,6 +250,11 @@ Issues and pull requests are welcome, especially test reports from other phones.
 [CONTRIBUTING.md](CONTRIBUTING.md) first: the project follows a clean-room rule (no code, assets, names or
 protocols from other VR players), and contributions are made under the [CLA](CLA.md).
 
+
+## Support
+
+Sideview VR is free and always will be. If it adds something to your movie nights, I would really appreciate a coffee: [buymeacoffee.com/echosky](https://buymeacoffee.com/echosky)
+
 ## License
 
 Sideview VR is free software under the **GNU General Public License v3.0 or later** ([LICENSE](LICENSE)).

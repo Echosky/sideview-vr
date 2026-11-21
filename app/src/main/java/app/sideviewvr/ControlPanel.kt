@@ -225,6 +225,8 @@ class ControlPanel(private val a: MainActivity, private val s: Settings) {
         slider("House lights", 0f, 1.5f, 30, { s.roomLights }, pct) { s.roomLights = it; a.lightsChanged() }
         slider("Lights during the movie", 0f, 1.5f, 30, { s.dimLights }, pct) { s.dimLights = it; a.lightsChanged() }
         choice("Dim lights when the movie starts", { if (s.autoDim) "On" else "Off" }) { s.autoDim = !s.autoDim; a.lightsChanged() }
+        choice("Room", { if (s.voidRoom) "Black void" else "Theatre" }) { s.voidRoom = !s.voidRoom; a.lightsChanged() }
+        choice("Fade to a black void during the movie", { if (s.voidWhenDimmed) "On" else "Off" }) { s.voidWhenDimmed = !s.voidWhenDimmed; a.lightsChanged() }
         slider("Dim after", 0f, 15f, 15, { s.dimDelaySec.toFloat() }, { "${it.toInt()} s" }) { s.dimDelaySec = it.toInt() }
         slider("Screen glow on the room", 0f, 2.5f, 25, { s.ambient }, pct) { s.ambient = it }
         actions((if (s.seats) "Seats: on" else "Seats: off") to { s.seats = !s.seats; showTab(2) },
@@ -435,7 +437,9 @@ class ControlPanel(private val a: MainActivity, private val s: Settings) {
     private fun powerTab() {
         fun onOff(b: Boolean) = if (b) "On" else "Off"
         choice("Battery saver", { onOff(s.batterySaver) }) { s.batterySaver = !s.batterySaver; a.applyBattery() }
-        content.addView(hint("Saver: a slightly softer picture (no supersampling), 50 Hz head tracking, room light from the movie updated less often, slower menu updates. Turn it off for the sharpest picture."))
+        content.addView(hint("Saver: 50 Hz head tracking, room light from the movie updated less often, slower menu updates. It keeps your sharpness setting."))
+        slider("Sharpness", 0.7f, 1.6f, 9, { s.renderScale }, { "%.1fx".format(it) }) { s.renderScale = it; a.applyBattery() }
+        content.addView(hint("Render resolution per eye. 1.4x is sharp; 1.0x saves some battery; above 1.4x mostly costs battery."))
         choice("Lock the view (no head tracking)", { onOff(s.lockView) }) { s.lockView = !s.lockView; a.applyBattery() }
         content.addView(hint("Locks the screen in front of you and turns the motion sensor off; only new video frames are drawn. Recenter to re-aim."))
         choice("Zero-copy video (experimental)", { onOff(s.zeroCopy) }) { s.zeroCopy = !s.zeroCopy; a.applyBattery() }

@@ -377,6 +377,59 @@ class ImmersiveView {
     }
 }
 
+/** The controller's laser: a thin camera-facing beam from the controller to the pointer, fading out. */
+class LaserBeam {
+    private val prog = Gl.program(
+        """#version 300 es
+        uniform mat4 uVp; uniform vec3 uP[4];
+        out float vT; out float vS;
+        void main() {
+            int i = gl_VertexID;
+            int c = (i == 0 || i == 3) ? 0 : (i == 1) ? 1 : (i == 2 || i == 4) ? 2 : 3;
+            vT = (c < 2) ? 0.0 : 1.0;          // 0 at the controller, 1 at the pointer
+            vS = (c == 0 || c == 3) ? -1.0 : 1.0;
+            gl_Position = uVp * vec4(uP[c], 1.0);
+        }
+        """,
+        """#version 300 es
+        precision mediump float;
+        uniform vec4 uColor;
+        in float vT; in float vS; out vec4 fragColor;
+        void main() {
+            float core = 1.0 - smoothstep(0.0, 1.0, abs(vS));
+            float a = uColor.a * mix(0.85, 0.15, vT) * core;
+            fragColor = vec4(mix(uColor.rgb, vec3(1.0), core * 0.5), a);
+        }
+        """
+    )
+    private val uVp = glGetUniformLocation(prog, "uVp")
+    private val uP = glGetUniformLocation(prog, "uP")
+    private val uColor = glGetUniformLocation(prog, "uColor")
+    private val vao = IntArray(1).also { glGenVertexArrays(1, it, 0) }[0]
+    private val pts = FloatArray(12)
+
+    /** [from], [to] and [eye] are world positions; draw with blending on and depth test off. */
+    fun draw(vp: FloatArray, from: FloatArray, to: FloatArray, eye: FloatArray, r: Float, g: Float, b: Float, alpha: Float) {
+        val ax = to[0] - from[0]; val ay = to[1] - from[1]; val az = to[2] - from[2]
+        val vx = eye[0] - from[0]; val vy = eye[1] - from[1]; val vz = eye[2] - from[2]
+        var sx = ay * vz - az * vy; var sy = az * vx - ax * vz; var sz = ax * vy - ay * vx
+        val len = kotlin.math.sqrt(sx * sx + sy * sy + sz * sz)
+        if (len < 1e-6f) return
+        sx /= len; sy /= len; sz /= len
+        val w0 = 0.006f; val w1 = 0.012f    // half widths: thin at the hand, slightly wider far away
+        pts[0] = from[0] - sx * w0; pts[1] = from[1] - sy * w0; pts[2] = from[2] - sz * w0
+        pts[3] = from[0] + sx * w0; pts[4] = from[1] + sy * w0; pts[5] = from[2] + sz * w0
+        pts[6] = to[0] + sx * w1; pts[7] = to[1] + sy * w1; pts[8] = to[2] + sz * w1
+        pts[9] = to[0] - sx * w1; pts[10] = to[1] - sy * w1; pts[11] = to[2] - sz * w1
+        glUseProgram(prog)
+        glUniformMatrix4fv(uVp, 1, false, vp, 0)
+        glUniform3fv(uP, 4, pts, 0)
+        glUniform4f(uColor, r, g, b, alpha)
+        glBindVertexArray(vao)
+        glDrawArrays(GL_TRIANGLES, 0, 6)
+    }
+}
+
 /** A textured quad for the in-VR control panel and the pointer dot. */
 class PanelQuad {
     private val prog = Gl.program(
