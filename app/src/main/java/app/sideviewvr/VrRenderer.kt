@@ -311,7 +311,7 @@ class VrRenderer(
                 val half = width / 2
                 glViewport(i * half, 0, half, height)
                 val lensX = width / 2f + (if (i == 0) -1 else 1) * v.interLens / 2 * ppm
-                lens!!.draw(e[i].tex, lensX, lensY, pxPerTan, v.k1, v.k2, v.tanMax)
+                lens!!.draw(e[i].tex, lensX, lensY, pxPerTan, v.k1, v.k2, v.k3, v.tanMax)
             }
         } else {
             glBindFramebuffer(GL_FRAMEBUFFER, 0)

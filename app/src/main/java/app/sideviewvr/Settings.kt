@@ -128,14 +128,18 @@ data class ViewerParams(
     val k1: Float,
     val k2: Float,
     val tanMax: Float = 1.43f,
+    val k3: Float = 0f,
 )
 
 object ViewerProfiles {
     val all = listOf(
         ViewerParams("Cardboard v2", 0.0639f, 0.039f, 0.035f, 0.34f, 0.55f),
-        // Approximate values; fine-tune with the Custom profile.
-        ViewerParams("Daydream View", 0.0639f, 0.0393f, 0.035f, 0.385f, 0.593f, 1.6f),
+        // Distortion coefficients as published for each headset; lens spacing and screen distance
+        // were never published (63.9 / 39.3 mm are the usual starting values). Fine-tune with Custom.
+        ViewerParams("Daydream View (2016)", 0.0639f, 0.0393f, 0.035f, 0.385f, 0.593f, 1.6f),
         ViewerParams("Custom", 0.0639f, 0.039f, 0.035f, 0.34f, 0.55f),
+        // Appended so saved profile numbers stay valid.
+        ViewerParams("Daydream View (2017)", 0.0639f, 0.0393f, 0.035f, 0.4331f, -0.0856f, 1.75f, k3 = 1.4535f),
     )
 
     fun current(s: Settings): ViewerParams {

@@ -514,13 +514,13 @@ class LensDistortion {
         uniform sampler2D uEye;
         uniform vec2 uLensCenter;   // window pixels
         uniform float uPxPerTan;    // pixels per unit tan-angle (px/m * screen-to-lens m)
-        uniform vec2 uK;            // radial distortion k1, k2
+        uniform vec3 uK;            // radial distortion k1, k2, k3
         uniform float uTanMax;      // half-extent of the eye image in tan-angle
         out vec4 fragColor;
         void main() {
             vec2 t = (gl_FragCoord.xy - uLensCenter) / uPxPerTan;
             float r2 = dot(t, t);
-            t *= 1.0 + uK.x * r2 + uK.y * r2 * r2;   // where the lens makes this pixel appear
+            t *= 1.0 + r2 * (uK.x + r2 * (uK.y + r2 * uK.z));   // where the lens makes this pixel appear
             vec2 uv = t / uTanMax * 0.5 + 0.5;
             if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) {
                 fragColor = vec4(0.0, 0.0, 0.0, 1.0);
@@ -537,14 +537,14 @@ class LensDistortion {
     private val uTanMax = glGetUniformLocation(prog, "uTanMax")
     private val emptyVao = IntArray(1).also { glGenVertexArrays(1, it, 0) }[0]
 
-    fun draw(eyeTex: Int, lensX: Float, lensY: Float, pxPerTan: Float, k1: Float, k2: Float, tanMax: Float) {
+    fun draw(eyeTex: Int, lensX: Float, lensY: Float, pxPerTan: Float, k1: Float, k2: Float, k3: Float, tanMax: Float) {
         glUseProgram(prog)
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, eyeTex)
         glUniform1i(uEye, 0)
         glUniform2f(uLensCenter, lensX, lensY)
         glUniform1f(uPxPerTan, pxPerTan)
-        glUniform2f(uK, k1, k2)
+        glUniform3f(uK, k1, k2, k3)
         glUniform1f(uTanMax, tanMax)
         glBindVertexArray(emptyVao)
         glDrawArrays(GL_TRIANGLES, 0, 3)
