@@ -437,11 +437,11 @@ class PanelQuad {
         glDrawArrays(GL_TRIANGLES, 0, 6)
     }
 
-    fun drawDot(mvp: FloatArray, r: Float, g: Float, b: Float) {
+    fun drawDot(mvp: FloatArray, r: Float, g: Float, b: Float, alpha: Float = 1f) {
         glUseProgram(prog)
         glUniformMatrix4fv(uMvp, 1, false, mvp, 0)
         glUniform1i(uDot, 1)
-        glUniform4f(uColor, r, g, b, 1f)
+        glUniform4f(uColor, r, g, b, alpha)
         glBindVertexArray(vao)
         glDrawArrays(GL_TRIANGLES, 0, 6)
     }

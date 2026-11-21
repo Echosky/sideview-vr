@@ -41,7 +41,12 @@ class DaydreamController(private val context: Context) {
     enum class Button { CLICK, APP, HOME, VOL_UP, VOL_DOWN }
 
     var listener: Listener? = null
+    /** Address of the last controller that connected; reused to reconnect automatically. */
+    var savedAddress: String? = null
+    var onAddress: (String) -> Unit = {}
     @Volatile var connected = false; private set
+    private var wanted = false     // keep (re)connecting until disconnect() is called
+    private var retries = 0
     var status = "Not connected"; private set
 
     private val main = Handler(Looper.getMainLooper())
@@ -64,19 +69,37 @@ class DaydreamController(private val context: Context) {
 
     private val adapter get() = (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
 
-    fun connect() {
+    /**
+     * Connects to the remembered or paired controller (waiting in the background until it wakes up),
+     * or scans for one. With [quiet], nothing is scanned: used for automatic reconnects.
+     */
+    fun connect(quiet: Boolean = false) {
         val a = adapter
         if (a == null || !a.isEnabled) { setStatus("Bluetooth is off"); return }
+        if (connected) return
+        wanted = true
         try {
-            val bonded = a.bondedDevices.firstOrNull { it.name?.contains("Daydream", true) == true }
-            if (bonded != null) { connectTo(bonded); return }
+            val known = savedAddress?.let { runCatching { a.getRemoteDevice(it) }.getOrNull() }
+                ?: a.bondedDevices.firstOrNull { it.name?.contains("Daydream", true) == true }
+            if (known != null) { connectTo(known, background = true); if (quiet) return }
+            if (quiet) return
+            if (!locationOn()) { setStatus("Turn on Location: Android needs it to find Bluetooth devices"); return }
             startScan()
         } catch (e: SecurityException) {
             setStatus("Bluetooth permission missing")
         }
     }
 
+    private fun locationOn(): Boolean {
+        if (Build.VERSION.SDK_INT >= 31) return true   // BLUETOOTH_SCAN with neverForLocation
+        val lm = context.getSystemService(Context.LOCATION_SERVICE) as android.location.LocationManager
+        return if (Build.VERSION.SDK_INT >= 28) lm.isLocationEnabled
+        else lm.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER) ||
+            lm.isProviderEnabled(android.location.LocationManager.NETWORK_PROVIDER)
+    }
+
     fun disconnect() {
+        wanted = false
         stopScan()
         try { gatt?.close() } catch (_: SecurityException) {}
         gatt = null
@@ -106,24 +129,35 @@ class DaydreamController(private val context: Context) {
             val name = try { result.device.name } catch (_: SecurityException) { null }
             if (uuids?.any { it.uuid == SERVICE } == true || name?.contains("Daydream", true) == true) {
                 stopScan()
-                connectTo(result.device)
+                connectTo(result.device, background = false)
             }
         }
     }
 
-    private fun connectTo(device: BluetoothDevice) {
-        setStatus("Connecting…")
-        gatt?.close()
-        gatt = device.connectGatt(context, false, gattCallback, BluetoothDevice.TRANSPORT_LE)
+    /** [background]: let Android connect whenever the controller is awake (autoConnect). */
+    private fun connectTo(device: BluetoothDevice, background: Boolean) {
+        setStatus(if (background) "Waiting for the controller… press its home button" else "Connecting…")
+        try { gatt?.close() } catch (_: SecurityException) {}
+        gatt = device.connectGatt(context, background, gattCallback, BluetoothDevice.TRANSPORT_LE)
+    }
+
+    private fun retryLater(device: BluetoothDevice) {
+        if (!wanted) return
+        val delay = minOf(30_000L, 2_000L shl minOf(retries++, 4))
+        main.postDelayed({ if (wanted && !connected) connectTo(device, background = true) }, delay)
     }
 
     private val gattCallback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(g: BluetoothGatt, status: Int, newState: Int) {
-            if (newState == BluetoothProfile.STATE_CONNECTED) {
+            if (newState == BluetoothProfile.STATE_CONNECTED && status == BluetoothGatt.GATT_SUCCESS) {
                 g.discoverServices()
-            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+            } else if (newState == BluetoothProfile.STATE_DISCONNECTED || status != BluetoothGatt.GATT_SUCCESS) {
+                val was = connected
                 connected = false
-                setStatus("Disconnected")
+                setStatus(if (was) "Controller disconnected, reconnecting…" else "Controller not reachable, retrying…")
+                try { g.close() } catch (_: SecurityException) {}
+                if (gatt === g) gatt = null
+                retryLater(g.device)
             }
         }
 
@@ -141,7 +175,10 @@ class DaydreamController(private val context: Context) {
                 g.writeDescriptor(d)
             }
             connected = true
+            retries = 0
             recenterPending = true
+            savedAddress = g.device.address
+            main.post { onAddress(g.device.address) }
             setStatus("Controller connected")
         }
 

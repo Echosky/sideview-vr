@@ -435,7 +435,7 @@ class ControlPanel(private val a: MainActivity, private val s: Settings) {
     private fun powerTab() {
         fun onOff(b: Boolean) = if (b) "On" else "Off"
         choice("Battery saver", { onOff(s.batterySaver) }) { s.batterySaver = !s.batterySaver; a.applyBattery() }
-        content.addView(hint("Saver: 20% fewer pixels per eye, 50 Hz head tracking, room light from the movie updated less often, slower menu updates."))
+        content.addView(hint("Saver: a slightly softer picture (no supersampling), 50 Hz head tracking, room light from the movie updated less often, slower menu updates. Turn it off for the sharpest picture."))
         choice("Lock the view (no head tracking)", { onOff(s.lockView) }) { s.lockView = !s.lockView; a.applyBattery() }
         content.addView(hint("Locks the screen in front of you and turns the motion sensor off; only new video frames are drawn. Recenter to re-aim."))
         choice("Zero-copy video (experimental)", { onOff(s.zeroCopy) }) { s.zeroCopy = !s.zeroCopy; a.applyBattery() }

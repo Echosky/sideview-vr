@@ -194,9 +194,12 @@ class VrRenderer(
         makeEyes()
     }
 
+    /** Eye buffer size relative to the display: supersampled for a sharper screen; less with the saver. */
+    private fun targetEyeScale() = if (saver) 1.0f else 1.4f
+
     private fun makeEyes() {
-        eyeScale = if (saver) 0.8f else 1.2f
-        val size = (minOf(width / 2, height) * eyeScale).toInt().coerceIn(384, 1600)
+        eyeScale = targetEyeScale()
+        val size = (minOf(width / 2, height) * eyeScale).toInt().coerceIn(384, 2048)
         eyes = arrayOf(EyeTarget(size), EyeTarget(size))
     }
 
@@ -249,7 +252,7 @@ class VrRenderer(
         else { tracker.getViewMatrix(head); System.arraycopy(head, 0, lockedHead, 0, 16) }
         if (settings.smartView && !lockView && !fixedView) smartAdjust(frameDt) else { adjYaw = 0f; adjPitch = 0f }
         if (adjYaw != 0f || adjPitch != 0f) applyAdjust()
-        if (settings.stereo && eyes != null && eyeScale != (if (saver) 0.8f else 1.2f)) makeEyes()
+        if (settings.stereo && eyes != null && eyeScale != targetEyeScale()) makeEyes()
         if (fixedView) {
             Matrix.setIdentityM(head, 0)
             Matrix.rotateM(head, 0, -fixedPitch, 1f, 0f, 0f)
@@ -358,6 +361,31 @@ class VrRenderer(
         return if (p.texWidth > 0) panelWidth * p.texHeight / p.texWidth else 0.5f
     }
 
+    // Pointer dot fades out when the pointer rests (and the menu is closed), back in on movement.
+    private val lastDir = FloatArray(3)
+    private var lastMoveNs = 0L
+    private var dotAlpha = 1f
+
+    private fun updateDotAlpha(menuOpen: Boolean) {
+        val dot = pointerDir[0] * lastDir[0] + pointerDir[1] * lastDir[1] + pointerDir[2] * lastDir[2]
+        val now = System.nanoTime()
+        if (menuOpen || dot < 0.99995f) {   // moved more than ~0.6 degrees
+            lastMoveNs = now
+            System.arraycopy(pointerDir, 0, lastDir, 0, 3)
+        }
+        val idle = (now - lastMoveNs) / 1e9f
+        val target = if (idle < 1.5f) 1f else maxOf(0f, 1f - (idle - 1.5f) / 0.6f)
+        dotAlpha = target
+        if (target > 0f && target < 1f) requestRender()
+        else if (target == 1f && !fadeWakePosted) {
+            // Nothing else may draw while everything is still: wake up once to start the fade.
+            fadeWakePosted = true
+            fadeWake.postDelayed({ fadeWakePosted = false; requestRender() }, 1600)
+        }
+    }
+    private val fadeWake = android.os.Handler(android.os.Looper.getMainLooper())
+    @Volatile private var fadeWakePosted = false
+
     /** Computes the pointer ray (controller if connected, else gaze) and its hit on the panel. */
     private fun updatePointer() {
         val cam = seatPosition(ScreenGeometry.of(settings.screenWidth, eyeAspect(), settings.screenDistance, 0f).distance)
@@ -375,6 +403,7 @@ class VrRenderer(
         }
         if (controller.connected || mouseActive) unadjust(pointerDir)
         pointTarget = classifyPointer(cam)
+        updateDotAlpha(panelVisible && panel!!.hasTexture)
         if (!panelVisible || !panel!!.hasTexture) {
             hitX = Float.NaN; hitY = Float.NaN; dotOnPanel = false
             placeDotInRoom(cam)
@@ -458,6 +487,7 @@ class VrRenderer(
     }
 
     private fun drawDot(p: PanelQuad, cam: FloatArray) {
+        if (dotAlpha <= 0f) return
         Matrix.setIdentityM(dotModel, 0)
         Matrix.translateM(dotModel, 0, dotPos[0], dotPos[1], dotPos[2])
         // Face the camera.
@@ -471,10 +501,10 @@ class VrRenderer(
         Matrix.scaleM(dotModel, 0, s, s, 1f)
         Matrix.multiplyMM(tmp, 0, vp, 0, dotModel, 0)
         when {
-            dotOnPanel -> p.drawDot(tmp, 0.45f, 0.75f, 1f)
-            pointTarget == Target.SCREEN -> p.drawDot(tmp, 1f, 0.85f, 0.4f)
-            pointTarget == Target.LIGHTS -> p.drawDot(tmp, 1f, 0.95f, 0.7f)
-            else -> p.drawDot(tmp, 0.8f, 0.8f, 0.8f)
+            dotOnPanel -> p.drawDot(tmp, 0.45f, 0.75f, 1f, dotAlpha)
+            pointTarget == Target.SCREEN -> p.drawDot(tmp, 1f, 0.85f, 0.4f, dotAlpha)
+            pointTarget == Target.LIGHTS -> p.drawDot(tmp, 1f, 0.95f, 0.7f, dotAlpha)
+            else -> p.drawDot(tmp, 0.8f, 0.8f, 0.8f, dotAlpha)
         }
     }
 

@@ -90,7 +90,12 @@ class MainActivity : Activity(), DaydreamController.Listener {
         settings = Settings(this)
         sources = SavedSources(settings)
         tracker = HeadTracker(this)
-        controller = DaydreamController(this).also { it.listener = this }
+        controller = DaydreamController(this).also {
+            it.listener = this
+            it.savedAddress = settings.string("controllerAddr")
+            it.onAddress = { a -> settings.putString("controllerAddr", a) }
+        }
+        registerReceiver(btState, android.content.IntentFilter(android.bluetooth.BluetoothAdapter.ACTION_STATE_CHANGED))
         together = WatchTogether(player) { panel.setStatus("Together: $it") }
         renderer = VrRenderer(settings, tracker, controller) { surface -> ui.post { onVideoSurface(surface) } }
 
@@ -168,7 +173,7 @@ class MainActivity : Activity(), DaydreamController.Listener {
             }
             buttons.addView(b, LinearLayout.LayoutParams(px(300), LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(px(10), 0, px(10), 0) })
         }
-        big("Enter the theatre", "Put the phone in the headset", Ui.Kind.FILLED) { closeStartScreen(); enterTheatre() }
+        big("Enter the theatre", "Put the phone in the headset, or press a controller button", Ui.Kind.FILLED) { closeStartScreen(); enterTheatre() }
         big("Menu", "Add servers, pick videos, downloads", Ui.Kind.TONAL) { closeStartScreen(); openMenu() }
         box.addView(buttons)
         box.addView(CheckBox(this).apply {
@@ -654,6 +659,20 @@ class MainActivity : Activity(), DaydreamController.Listener {
 
     // ------------------------------------------------------------- Daydream controller
 
+    /** Reconnects quietly to a remembered or paired controller when Bluetooth is on. */
+    private fun autoConnectController() {
+        val perms = if (Build.VERSION.SDK_INT >= 31) arrayOf(Manifest.permission.BLUETOOTH_CONNECT)
+        else arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+        if (perms.all { checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }) controller.connect(quiet = true)
+    }
+
+    private val btState = object : android.content.BroadcastReceiver() {
+        override fun onReceive(c: android.content.Context, i: Intent) {
+            val s = i.getIntExtra(android.bluetooth.BluetoothAdapter.EXTRA_STATE, -1)
+            if (s == android.bluetooth.BluetoothAdapter.STATE_ON) autoConnectController()
+        }
+    }
+
     fun connectController() {
         val perms = if (Build.VERSION.SDK_INT >= 31)
             arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
@@ -674,6 +693,10 @@ class MainActivity : Activity(), DaydreamController.Listener {
     }
 
     override fun onButton(button: DaydreamController.Button) {
+        // The start screen is flat (no pointer): any controller press means "I'm in the headset".
+        if (startScreen != null && button != DaydreamController.Button.VOL_UP && button != DaydreamController.Button.VOL_DOWN) {
+            enterTheatre(); return
+        }
         when (button) {
             DaydreamController.Button.CLICK ->
                 if (panelShown && !renderer.hitX.isNaN()) clickPanel(renderer.hitX, renderer.hitY) else player.togglePause()
@@ -782,6 +805,7 @@ class MainActivity : Activity(), DaydreamController.Listener {
         if (!settings.lockView) tracker.start()
         glView.onResume()
         ui.post(poll)
+        autoConnectController()
     }
 
     override fun onPause() {
@@ -795,6 +819,7 @@ class MainActivity : Activity(), DaydreamController.Listener {
 
     override fun onDestroy() {
         together.stop()
+        try { unregisterReceiver(btState) } catch (_: Exception) {}
         controller.disconnect()
         player.destroy()
         isoFd?.close()
